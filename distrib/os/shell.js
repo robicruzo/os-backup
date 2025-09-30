@@ -67,6 +67,9 @@ var TSOS;
             //  status
             sc = new TSOS.ShellCommand(this.shellStatus, "status", "<string> - sets the taskbar status.");
             this.commandList[this.commandList.length] = sc;
+            // scroll
+            sc = new TSOS.ShellCommand(this.shellScrollDown, "scroll", "[lines] - Scrolls the console output down by a page or the optional number of lines.");
+            this.commandList[this.commandList.length] = sc;
             // ps  - list the running processes and their IDs
             // kill <id> - kills the specified process id.
             // Display the initial prompt.
@@ -290,6 +293,18 @@ var TSOS;
             else {
                 _StdOut.putText("Usage: prompt <string>  Please supply a string.");
             }
+        }
+        shellScrollDown(args) {
+            let pageSize = undefined;
+            if (args.length > 0) {
+                const parsed = parseInt(args[0], 10);
+                if (isNaN(parsed) || parsed <= 0) {
+                    _StdOut.putText("Usage: scroll [lines]  lines must be a positive number.");
+                    return;
+                }
+                pageSize = parsed;
+            }
+            _StdOut.scrollDown(pageSize);
         }
         shellDate(args) {
             const now = new Date(); // found relevant info from: https://javascript.info/date

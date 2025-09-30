@@ -146,6 +146,14 @@ namespace TSOS {
       );
       this.commandList[this.commandList.length] = sc;
 
+      // scroll
+      sc = new ShellCommand(
+        this.shellScrollDown,
+        "scroll",
+        "[lines] - Scrolls the console output down by a page or the optional number of lines.",
+      );
+      this.commandList[this.commandList.length] = sc;
+
       // ps  - list the running processes and their IDs
       // kill <id> - kills the specified process id.
 
@@ -387,6 +395,21 @@ namespace TSOS {
       } else {
         _StdOut.putText("Usage: prompt <string>  Please supply a string.");
       }
+    }
+
+    public shellScrollDown(args: string[]) {
+      let pageSize: number | undefined = undefined;
+
+      if (args.length > 0) {
+        const parsed = parseInt(args[0], 10);
+        if (isNaN(parsed) || parsed <= 0) {
+          _StdOut.putText("Usage: scroll [lines]  lines must be a positive number.");
+          return;
+        }
+        pageSize = parsed;
+      }
+
+      _StdOut.scrollDown(pageSize);
     }
     public shellDate(args: string[]) {
       const now = new Date(); // found relevant info from: https://javascript.info/date
