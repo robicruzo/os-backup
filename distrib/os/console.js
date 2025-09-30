@@ -12,16 +12,16 @@ var TSOS;
         currentXPosition;
         currentYPosition;
         buffer;
-        lineEndStack;
-        minCanvasHeight = 500; // Minimum canvas height
+        minCanvasHeight = 500; // minimum canvas height
         lineHeight = 0;
-        constructor(currentFont = _DefaultFontFamily, currentFontSize = _DefaultFontSize, currentXPosition = 0, currentYPosition = _DefaultFontSize, buffer = "", lineEndStack = []) {
+        lines = [""];
+        firstVisibleLine = 0;
+        constructor(currentFont = _DefaultFontFamily, currentFontSize = _DefaultFontSize, currentXPosition = 0, currentYPosition = _DefaultFontSize, buffer = "") {
             this.currentFont = currentFont;
             this.currentFontSize = currentFontSize;
             this.currentXPosition = currentXPosition;
             this.currentYPosition = currentYPosition;
             this.buffer = buffer;
-            this.lineEndStack = lineEndStack;
             this.calculateLineHeight();
         }
         calculateLineHeight() {
@@ -30,28 +30,47 @@ var TSOS;
                     _DrawingContext.fontDescent(this.currentFont, this.currentFontSize) +
                     _FontHeightMargin;
         }
-        updateCanvasHeight() {
-            // Calculate needed height based on current Y position plus some padding
-            const neededHeight = this.currentYPosition + this.lineHeight * 3;
-            const newHeight = Math.max(this.minCanvasHeight, neededHeight);
-            // Only update if we need more space
-            if (newHeight > _Canvas.height) {
-                // Store current canvas content
-                const imageData = _DrawingContext.getImageData(0, 0, _Canvas.width, _Canvas.height);
-                // Resize canvas
-                _Canvas.height = newHeight;
-                // Restore the content
-                _DrawingContext.putImageData(imageData, 0, 0);
-                // Auto-scroll to bottom
-                this.scrollToBottom();
-            }
+        getVisibleLineCapacity() {
+            return Math.max(1, Math.floor(_Canvas.height / this.lineHeight));
         }
-        scrollToBottom() {
-            // Scroll the container to show the bottom
-            const container = document.getElementById("divConsole");
-            if (container) {
-                container.scrollTop = container.scrollHeight;
+        measureTextWidth(text) {
+            let width = 0;
+            for (const ch of text) {
+                width += _DrawingContext.measureText(this.currentFont, this.currentFontSize, ch);
             }
+            return width;
+        }
+        isAtBottom() {
+            const capacity = this.getVisibleLineCapacity();
+            const maxFirstLine = Math.max(0, this.lines.length - capacity);
+            return this.firstVisibleLine >= maxFirstLine;
+        }
+        scrollToLatest() {
+            const capacity = this.getVisibleLineCapacity();
+            this.firstVisibleLine = Math.max(0, this.lines.length - capacity);
+            this.syncCaretPosition();
+        }
+        syncCaretPosition() {
+            const capacity = this.getVisibleLineCapacity();
+            const currentLineIndex = this.lines.length - 1;
+            const visibleOffset = currentLineIndex - this.firstVisibleLine;
+            const clampedOffset = Math.max(0, Math.min(visibleOffset, capacity - 1));
+            this.currentYPosition =
+                this.currentFontSize + clampedOffset * this.lineHeight;
+        }
+        redrawVisibleLines() {
+            _DrawingContext.clearRect(0, 0, _Canvas.width, _Canvas.height);
+            const capacity = this.getVisibleLineCapacity();
+            const endLine = Math.min(this.firstVisibleLine + capacity, this.lines.length);
+            let drawY = this.currentFontSize;
+            for (let i = this.firstVisibleLine; i < endLine; i++) {
+                const line = this.lines[i];
+                if (line.length > 0) {
+                    _DrawingContext.drawText(this.currentFont, this.currentFontSize, 0, drawY, line);
+                }
+                drawY += this.lineHeight;
+            }
+            this.syncCaretPosition();
         }
         init() {
             this.clearScreen();
@@ -78,7 +97,10 @@ var TSOS;
             }
         }
         clearScreen() {
-            _DrawingContext.clearRect(0, 0, _Canvas.width, _Canvas.height);
+            this.lines = [""];
+            this.firstVisibleLine = 0;
+            this.currentXPosition = 0;
+            this.redrawVisibleLines();
         }
         resetXY() {
             this.currentXPosition = 0;
@@ -87,16 +109,28 @@ var TSOS;
         handleBackSpace() {
             if (this.buffer.length === 0)
                 return;
-            const lastChar = this.buffer[this.buffer.length - 1];
+            const followOutput = this.isAtBottom();
             this.buffer = this.buffer.slice(0, -1);
-            const charWidth = _DrawingContext.measureText(this.currentFont, this.currentFontSize, lastChar);
-            if (this.currentXPosition - charWidth < 0 &&
-                this.lineEndStack.length > 0) {
-                this.currentYPosition -= this.lineHeight;
-                this.currentXPosition = this.lineEndStack.pop() || 0;
+            // Remove any trailing empty lines that belong to the active input line.
+            while (this.lines.length > 1 &&
+                this.lines[this.lines.length - 1].length === 0) {
+                this.lines.pop();
             }
-            this.currentXPosition -= charWidth;
-            _DrawingContext.clearRect(this.currentXPosition, this.currentYPosition - _DefaultFontSize, charWidth + 1, this.lineHeight);
+            const lineIndex = this.lines.length - 1;
+            const currentLine = this.lines[lineIndex];
+            this.lines[lineIndex] = currentLine.slice(0, -1);
+            if (this.lines[lineIndex].length === 0 && this.lines.length > 1) {
+                this.lines.pop();
+            }
+            const activeLineIndex = this.lines.length - 1;
+            this.currentXPosition = this.measureTextWidth(this.lines[activeLineIndex]);
+            if (followOutput) {
+                this.scrollToLatest();
+            }
+            else {
+                this.syncCaretPosition();
+            }
+            this.redrawVisibleLines();
         }
         handleTab() {
             const typed = this.buffer.trim();
@@ -169,22 +203,48 @@ var TSOS;
         putText(text) {
             if (text === "")
                 return;
+            const followOutput = this.isAtBottom();
             for (let i = 0; i < text.length; i++) {
                 const ch = text.charAt(i);
                 const w = _DrawingContext.measureText(this.currentFont, this.currentFontSize, ch);
                 if (this.currentXPosition + w > _Canvas.width) {
                     this.advanceLine();
                 }
-                _DrawingContext.drawText(this.currentFont, this.currentFontSize, this.currentXPosition, this.currentYPosition, ch);
+                this.lines[this.lines.length - 1] += ch;
                 this.currentXPosition += w;
             }
+            if (followOutput) {
+                this.scrollToLatest();
+            }
+            else {
+                this.syncCaretPosition();
+            }
+            this.redrawVisibleLines();
         }
         advanceLine() {
-            this.lineEndStack.push(this.currentXPosition);
+            const followOutput = this.isAtBottom();
+            this.lines.push("");
             this.currentXPosition = 0;
-            this.currentYPosition += this.lineHeight;
-            // Check if we need more canvas space and update accordingly
-            this.updateCanvasHeight();
+            if (followOutput) {
+                this.scrollToLatest();
+            }
+            else {
+                this.syncCaretPosition();
+            }
+            this.redrawVisibleLines();
+        }
+        scrollDown(pageSize) {
+            const capacity = this.getVisibleLineCapacity();
+            if (capacity <= 0)
+                return;
+            const step = pageSize != null ? pageSize : capacity;
+            if (step <= 0) {
+                this.redrawVisibleLines();
+                return;
+            }
+            const maxFirstLine = Math.max(0, this.lines.length - capacity);
+            this.firstVisibleLine = Math.min(maxFirstLine, this.firstVisibleLine + step);
+            this.redrawVisibleLines();
         }
     }
     TSOS.Console = Console;

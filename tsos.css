@@ -69,32 +69,5 @@ h3 {
 }
 
 #divConsole {
-    /* Enable scrolling with a visible scrollbar */
-    overflow: auto;
-    max-height: 500px;
     max-width: 500px;
-    /* Smooth scrolling behavior */
-    scroll-behavior: smooth;
-    /* Style the scrollbar for better appearance */
-    scrollbar-width: thin;
-    scrollbar-color: #888 #f1f1f1;
-}
-
-/* WebKit scrollbar styling */
-#divConsole::-webkit-scrollbar {
-    width: 12px;
-}
-
-#divConsole::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 6px;
-}
-
-#divConsole::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 6px;
-}
-
-#divConsole::-webkit-scrollbar-thumb:hover {
-    background: #555;
 }
