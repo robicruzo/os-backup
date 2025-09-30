@@ -1,0 +1,100 @@
+/* TSOS.css */
+
+body {
+    background: #909193 url(distrib/images/linen.png) repeat;
+    font-family: Helvetica, Verdana, Arial, sans-serif;
+    font-size: 12pt;
+    font-weight: normal;
+    font-style: normal;
+}
+
+h1 {
+    color: black;
+    font-size: 24pt;
+    font-weight: normal;
+    font-style: normal;
+    border-bottom: 1px solid black;
+}
+
+h2 {
+    color: black;
+    font-size: 20pt;
+    font-weight: normal;
+    font-style: normal;
+}
+
+h3 {
+    font-family: Helvetica, Verdana, Arial, sans-serif;
+    font-size: 16pt;
+    font-weight: normal;
+    font-style: normal;
+}
+
+#display {
+    background-color: #dfdbc3;
+    border: 2px solid red;
+    cursor: default;
+    /* The canvas will grow dynamically */
+    display: block;
+}
+
+.normal_button {
+    width: 100px;
+}
+
+.taskbar-right {
+    /* Host taskbar styling asssisted by ChatGPT */
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: linear-gradient(
+        180deg,
+        var(--bar-bg),
+        rgba(255, 255, 255, 0.72)
+    );
+    border: 1px solid var(--bar-border);
+    border-radius: 14px;
+    box-shadow: var(--bar-shadow);
+    color: var(--ink);
+    backdrop-filter: saturate(1.05) blur(2px);
+    font-variant-numeric: tabular-nums;
+}
+
+.footerText {
+    color: black;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 8pt;
+    text-align: center;
+}
+
+#divConsole {
+    /* Enable scrolling with a visible scrollbar */
+    overflow: auto;
+    max-height: 500px;
+    max-width: 500px;
+    /* Smooth scrolling behavior */
+    scroll-behavior: smooth;
+    /* Style the scrollbar for better appearance */
+    scrollbar-width: thin;
+    scrollbar-color: #888 #f1f1f1;
+}
+
+/* WebKit scrollbar styling */
+#divConsole::-webkit-scrollbar {
+    width: 12px;
+}
+
+#divConsole::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 6px;
+}
+
+#divConsole::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 6px;
+}
+
+#divConsole::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
